@@ -1,0 +1,33 @@
+Participant_id,Age,Gender,Hours of sleep last night,Normal hours of sleep,Tobacco consumption
+S01,31,Male,7.0,8,"Today, Regularly"
+S02,24,Female,7.0,8,Never
+S03,19,Female,7.5,6-8,Never
+S04,24,Female,7.0,7-8,Never
+S05,24,Male,9.0,8,Never
+S06,23,Male,10.0,8-9,Never
+S07,31,Male,9.0,7.5,Never
+S08,22,Female,9.0,8,Never
+S09,25,Female,8.0,8,Never
+S10,31,Female,6.5,7,Never
+S11,27,Female,7.0,7,Never
+S12,37,Male,8.0,8,Never
+S13,24,Female,7.5,8,Never
+S14,27,Female,6.0,7,Never
+S15,22,Female,7.0,6,Never
+S16,28,Male,6.0,6-8,"Today, Regularly"
+S17,25,Male,7.0,7,Never
+S18,29,Male,7.0,8,Never
+S19,27,Male,7.0,7,Never
+S20,25,Male,8.0,8,Never
+S21,30,Male,6.0,5-6,Never
+S22,28,Female,7.0,7,Never
+S23,27,Male,8.0,8,Never
+S24,28,Female,7.0,7-8,Never
+S25,26,Female,8.0,8,Never
+S26,36,Male,,,
+S27,35,Male,9.0,7,Never
+S28,24,Male,7.0,8,Never
+S29,24,Male,8.0,8,Never
+S30,33,Male,9.0,9,Never
+S31,21,Female,7.0,7,Never
+S32,33,Female,7.0,7,Never
