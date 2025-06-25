@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализатор эмоций EEG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .emotion-card {
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .emotion-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+        }
+        .emotion-badge {
+            font-size: 0.75rem;
+            padding: 0.35em 0.65em;
+        }
+        #emotion-plot {
+            border-radius: 8px;
+            max-width: 100%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .video-item {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .video-item:hover {
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="text-center mb-4">
+                    <h1 class="mb-3">🧠 Анализатор эмоциональных реакций</h1>
+                    <p class="text-muted">Загрузите данные EEG для анализа эмоций при просмотре видео</p>
+                </div>
+
+                <div class="card mb-4 emotion-card">
+                    <div class="card-body">
+                        <form id="uploadForm">
+                            <div class="mb-3">
+                                <label for="eegFile" class="form-label">Выберите файл данных</label>
+                                <input class="form-control" type="file" id="eegFile" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100" id="analyzeBtn">
+                                Анализировать
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="loading" class="text-center my-4" style="display: none;">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                    <p class="mt-3">Обработка данных...</p>
+                    <div class="progress">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                             style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="results" style="display: none;">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="card emotion-card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">📊 Общая статистика</h5>
+                                    <div class="text-center py-3">
+                                        <h2 id="averageValence">0.00</h2>
+                                        <small class="text-muted">Средняя валентность</small>
+                                    </div>
+                                    <div id="emotionStats"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card emotion-card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">🎬 Самые эмоциональные</h5>
+                                    <div id="topVideos" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card emotion-card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">📈 Динамика эмоций</h5>
+                            <div class="alert alert-info">
+                                <small>График показывает эмоциональные реакции на каждое видео. Цвет соответствует типу эмоции.</small>
+                            </div>
+                            <img id="emotionPlot" src="" class="img-fluid mt-3">
+                            <div class="mt-4">
+                                <h6>Подробные результаты:</h6>
+                                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3" id="videoDetails"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="error" class="alert alert-danger" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('eegFile');
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            resultsDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            analyzeBtn.disabled = true;
+
+            const progressBar = document.getElementById('progressBar');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress = Math.min(progress + 5, 90);
+                progressBar.style.width = progress + '%';
+            }, 300);
+
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка сервера');
+                }
+
+                const data = await response.json();
+                updateUI(data);
+
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    loadingDiv.style.display = 'none';
+                    resultsDiv.style.display = 'block';
+                    analyzeBtn.disabled = false;
+                    clearInterval(interval);
+                }, 500);
+
+            } catch (error) {
+                console.error('Ошибка:', error);
+                errorDiv.textContent = 'Ошибка: ' + error.message;
+                errorDiv.style.display = 'block';
+                loadingDiv.style.display = 'none';
+                analyzeBtn.disabled = false;
+                clearInterval(interval);
+            }
+        });
+
+        function updateUI(data) {
+            document.getElementById('averageValence').textContent =
+                data.average_valence.toFixed(2);
+
+            const statsDiv = document.getElementById('emotionStats');
+            statsDiv.innerHTML = Object.entries(data.emotion_counts)
+                .map(([emotion, count]) => `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${emotion}:</span>
+                        <span class="badge bg-secondary rounded-pill">${count}</span>
+                    </div>
+                `).join('');
+
+            const topVideosDiv = document.getElementById('topVideos');
+            topVideosDiv.innerHTML = data.top_videos.map(video => `
+                <div class="card mb-2 video-item">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">Видео ${video.number}</h6>
+                                <small class="text-muted">${video.emotion}</small>
+                            </div>
+                            <span class="badge rounded-pill" style="background-color: ${video.color}">
+                                ${video.valence.toFixed(2)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('emotionPlot').src = `data:image/png;base64,${data.plot}`;
+
+            const videoDetailsDiv = document.getElementById('videoDetails');
+            videoDetailsDiv.innerHTML = data.valence_data.map((valence, i) => {
+                const emotion = getEmotionLabel(valence);
+                return `
+                    <div class="col">
+                        <div class="card h-100 video-item">
+                            <div class="card-body text-center py-2">
+                                <h6 class="mb-1">#${i+1}</h6>
+                                <span class="badge emotion-badge" style="background-color: ${emotion.color}">
+                                    ${emotion.name}
+                                </span>
+                                <div class="mt-1 small text-muted">
+                                    ${valence.toFixed(2)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getEmotionLabel(valence) {
+            if (valence >= 0.8) return { name: 'Восторг', color: '#FF5733' };
+            if (valence >= 0.65) return { name: 'Радость', color: '#FFC300' };
+            if (valence >= 0.45) return { name: 'Спокойствие', color: '#2ECC71' };
+            if (valence >= 0.35) return { name: 'Нейтрально', color: '#3498DB' };
+            if (valence >= 0.2) return { name: 'Грусть', color: '#5D6D7E' };
+            return { name: 'Гнев', color: '#E74C3C' };
+        }
+    </script>
+</body>
+</html>
