@@ -47,4 +47,4 @@
 1. **Запуск приложения**  
    Выполните в терминале:
    ```bash
-   python app.py
+   python src/app.py
